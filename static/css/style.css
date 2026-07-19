@@ -6,18 +6,18 @@
 :root {
     --ink: #1A2420;
     --muted: #6E766F;
-    --paper: #F6F5F1;
+    --paper: #F4F1EB;
     --card: #FFFFFF;
     --border: #E4E1D8;
 
-    --primary: #0E4D3C;
-    --primary-dark: #0A3A2D;
-    --primary-tint: #E7F0EC;
-    --sage: #4C7A63;
+    --primary: #0F5B52;
+    --primary-dark: #0A403A;
+    --primary-tint: #E1F0ED;
+    --sage: #5A856E;
 
-    --accent: #B78846;
-    --accent-dark: #96702F;
-    --accent-tint: #F6EEDF;
+    --accent: #C28B4B;
+    --accent-dark: #9A6D33;
+    --accent-tint: #F7E8D6;
 
     --danger: #A63D2E;
     --danger-tint: #FBEAE6;
@@ -44,7 +44,10 @@ html { scroll-behavior: smooth; }
 body {
     margin: 0;
     font-family: var(--font-body);
-    background: var(--paper);
+    background:
+        radial-gradient(circle at top left, rgba(15, 91, 82, 0.08), transparent 34%),
+        radial-gradient(circle at top right, rgba(194, 139, 75, 0.10), transparent 28%),
+        linear-gradient(180deg, #F8F5EF 0%, var(--paper) 38%, #F1EFE8 100%);
     color: var(--ink);
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
@@ -68,12 +71,13 @@ a:hover { text-decoration: underline; }
    Header / Nav
    ========================================================================== */
 .site-header {
-    background: var(--card);
+    background: rgba(255, 255, 255, 0.84);
     border-bottom: 1px solid var(--border);
     padding: 0.9rem 1.5rem;
     position: sticky;
     top: 0;
     z-index: 20;
+    backdrop-filter: blur(12px);
 }
 
 .nav-container {
@@ -255,12 +259,56 @@ a:hover { text-decoration: underline; }
    Product grid / cards
    ========================================================================== */
 .listing-layout { display: flex; gap: 2.5rem; align-items: flex-start; }
-.category-filter { min-width: 170px; }
-.category-filter h3 { font-family: var(--font-body); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.category-filter ul { list-style: none; padding: 0; margin: 0.75rem 0 0; }
-.category-filter li { margin-bottom: 0.5rem; }
-.category-filter a { color: var(--ink); font-size: 0.94rem; }
-.category-filter a:hover { color: var(--primary); }
+.category-filter {
+    min-width: 230px;
+    padding: 1.1rem;
+    border-radius: var(--radius-lg);
+    background:
+        linear-gradient(180deg, rgba(15, 91, 82, 0.96) 0%, rgba(10, 64, 58, 0.98) 100%);
+    color: #F8F5EF;
+    box-shadow: var(--shadow-lift);
+    position: sticky;
+    top: 6rem;
+    overflow: hidden;
+}
+.category-filter::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 36%),
+        radial-gradient(circle at bottom left, rgba(194, 139, 75, 0.16), transparent 40%);
+    pointer-events: none;
+}
+.category-filter > * { position: relative; z-index: 1; }
+.category-filter h3 {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(248, 245, 239, 0.82);
+    margin-bottom: 0.9rem;
+}
+.category-filter ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.55rem; }
+.category-filter li { margin: 0; }
+.category-filter a {
+    display: block;
+    color: #F8F5EF;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.72rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+.category-filter a:hover {
+    color: #FFFFFF;
+    text-decoration: none;
+    transform: translateX(3px);
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.18);
+}
 
 .product-grid {
     flex: 1;
