@@ -10,15 +10,33 @@
         {% if hero_image and not hero_image.placeholder %}
             <div class="gallery-shell" data-product-gallery>
                 <button class="gallery-nav gallery-prev" type="button" aria-label="Previous image" data-gallery-prev>&lsaquo;</button>
-                <img src="{{ hero_image.url }}" alt="{{ hero_image.alt }}" class="detail-img gallery-main" data-gallery-main>
+                <div class="gallery-viewport">
+                    <div class="gallery-track" data-gallery-track>
+                        {% for image in gallery_items %}
+                            {% if image.placeholder %}
+                                <div class="gallery-slide gallery-slide-placeholder" data-gallery-slide>
+                                    <div class="detail-placeholder detail-placeholder-stack">
+                                        <div class="placeholder-card placeholder-card-large"><span>{{ image.label }}</span></div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="gallery-slide{% if forloop.first %} active{% endif %}" data-gallery-slide>
+                                    <img src="{{ image.url }}" alt="{{ image.alt }}" class="detail-img gallery-main">
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
                 <button class="gallery-nav gallery-next" type="button" aria-label="Next image" data-gallery-next>&rsaquo;</button>
             </div>
             {% if gallery_items|length > 1 %}
                 <div class="gallery-thumbs" data-gallery-thumbs>
                     {% for image in gallery_items %}
+                        {% if not image.placeholder %}
                         <button type="button" class="gallery-thumb{% if forloop.first %} active{% endif %}" data-gallery-thumb data-image-url="{{ image.url }}" data-image-alt="{{ image.alt }}">
                             <img src="{{ image.url }}" alt="{{ image.alt }}">
                         </button>
+                        {% endif %}
                     {% endfor %}
                 </div>
             {% endif %}
@@ -100,7 +118,8 @@
 <script>
     (function () {
         const galleryRoot = document.querySelector("[data-product-gallery]");
-        const mainImage = document.querySelector("[data-gallery-main]");
+        const track = document.querySelector("[data-gallery-track]");
+        const slides = Array.from(document.querySelectorAll("[data-gallery-slide]"));
         const thumbButtons = Array.from(document.querySelectorAll("[data-gallery-thumb]"));
         const prevButton = document.querySelector("[data-gallery-prev]");
         const nextButton = document.querySelector("[data-gallery-next]");
@@ -108,29 +127,30 @@
         const variantCopy = document.querySelector("[data-variant-copy]");
         const variationInput = document.querySelector("#variation");
 
-        if (galleryRoot && mainImage && thumbButtons.length) {
+        if (galleryRoot && track && slides.length) {
             let currentIndex = 0;
 
-            const setThumbActive = (index) => {
+            const setActiveSlide = (index) => {
                 currentIndex = index;
+                track.style.transform = `translateX(-${index * 100}%)`;
+                slides.forEach((slide, slideIndex) => {
+                    slide.classList.toggle("active", slideIndex === index);
+                });
                 thumbButtons.forEach((button, buttonIndex) => {
                     button.classList.toggle("active", buttonIndex === index);
                 });
-                const thumb = thumbButtons[index];
-                mainImage.src = thumb.dataset.imageUrl;
-                mainImage.alt = thumb.dataset.imageAlt || "Product image";
             };
 
             thumbButtons.forEach((button, index) => {
-                button.addEventListener("click", () => setThumbActive(index));
+                button.addEventListener("click", () => setActiveSlide(index));
             });
 
             prevButton?.addEventListener("click", () => {
-                setThumbActive((currentIndex - 1 + thumbButtons.length) % thumbButtons.length);
+                setActiveSlide((currentIndex - 1 + slides.length) % slides.length);
             });
 
             nextButton?.addEventListener("click", () => {
-                setThumbActive((currentIndex + 1) % thumbButtons.length);
+                setActiveSlide((currentIndex + 1) % slides.length);
             });
         }
 
@@ -147,17 +167,12 @@
                     variantCopy.textContent = button.dataset.variantDescription || variantCopy.textContent;
                 }
 
-                if (mainImage && button.dataset.variantImage) {
-                    mainImage.src = button.dataset.variantImage;
-                    mainImage.alt = button.dataset.variantName || mainImage.alt;
-                }
-
                 const matchingThumb = thumbButtons.find((thumb) => thumb.dataset.imageUrl === button.dataset.variantImage);
                 if (matchingThumb) {
                     const thumbIndex = thumbButtons.indexOf(matchingThumb);
                     thumbButtons.forEach((thumbButton) => thumbButton.classList.remove("active"));
                     matchingThumb.classList.add("active");
-                    currentIndex = thumbIndex;
+                    document.querySelector("[data-gallery-track]").style.transform = `translateX(-${thumbIndex * 100}%)`;
                 }
             });
         });

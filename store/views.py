@@ -72,6 +72,12 @@ def product_detail(request, slug):
     for image in product.get_gallery_images():
         gallery_items.append({"url": image.image.url, "alt": image.alt_text or product.name})
 
+    for variant in product.get_active_variants():
+        if variant.image:
+            variant_image_url = variant.image.url
+            if not any(item.get("url") == variant_image_url for item in gallery_items):
+                gallery_items.append({"url": variant_image_url, "alt": f"{product.name} - {variant.name}"})
+
     if not variants:
         fallback_options = product.get_variation_list()
         variants = [
