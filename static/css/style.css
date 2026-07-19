@@ -99,6 +99,20 @@ a:hover { text-decoration: underline; }
 .brand:hover { text-decoration: none; }
 .brand em { font-style: italic; color: var(--accent-dark); font-weight: 500; }
 
+.site-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.38rem 0.75rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: #fff;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    box-shadow: var(--shadow-sm);
+}
+
 .search-form {
     display: flex;
     align-items: center;
@@ -152,6 +166,21 @@ a:hover { text-decoration: underline; }
    Layout
    ========================================================================== */
 .container { max-width: 1180px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+.detail-banner {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 1.25rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, rgba(15, 91, 82, 0.12), rgba(194, 139, 75, 0.16));
+    border: 1px solid rgba(15, 91, 82, 0.12);
+    color: var(--ink);
+}
+.detail-banner strong { font-size: 0.92rem; }
+.detail-banner span { color: var(--muted); font-size: 0.88rem; }
 
 /* ==========================================================================
    Messages + Toasts
@@ -627,7 +656,9 @@ a:hover { text-decoration: underline; }
    ========================================================================== */
 @media (max-width: 720px) {
     .nav-container { gap: 1rem; }
+    .site-pill { order: 2; }
     .search-form { order: 3; max-width: 100%; flex-basis: 100%; }
+    .detail-banner { flex-direction: column; align-items: flex-start; }
     .listing-layout { flex-direction: column; }
     .category-filter { display: flex; gap: 1.2rem; }
     .category-filter ul { display: flex; gap: 1rem; margin: 0; }

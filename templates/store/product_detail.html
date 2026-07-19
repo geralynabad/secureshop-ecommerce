@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ product.name }}{% endblock %}
 {% block content %}
+<div class="detail-banner">
+    <strong>New product preview</strong>
+    <span>Color swatches, brief variant copy, and a photo carousel are now built into product pages.</span>
+</div>
 <div class="product-detail">
     <div class="product-media">
         {% if hero_image and not hero_image.placeholder %}
