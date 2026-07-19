@@ -89,6 +89,16 @@
                     </div>
                 </div>
                 <input type="hidden" id="variation" name="variation" value="{{ default_variant.name }}">
+            {% elif product.get_variation_list %}
+                <div class="field">
+                    <label for="variation">Option</label>
+                    <select id="variation" name="variation" required>
+                        <option value="" disabled selected>Choose an option&hellip;</option>
+                        {% for option in product.get_variation_list %}
+                            <option value="{{ option }}">{{ option }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             {% endif %}
             <div class="field">
                 <label for="qty">Quantity</label>
