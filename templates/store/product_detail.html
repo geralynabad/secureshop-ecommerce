@@ -67,22 +67,29 @@
                     <div class="variant-selected" data-variant-selected>{{ default_variant.name }}</div>
                     <div class="variant-swatches" data-variant-swatches>
                         {% for variant in variants %}
-                            <button
-                                type="button"
-                                class="variant-swatch{% if forloop.first %} active{% endif %}"
-                                data-variant-button
+                            <input
+                                type="radio"
+                                id="variant-{{ variant.name|slugify }}"
+                                name="variation"
+                                value="{{ variant.name }}"
+                                class="variant-radio"
+                                data-variant-radio
                                 data-variant-name="{{ variant.name }}"
                                 data-variant-description="{{ variant.brief_description|default:product.description }}"
                                 {% if variant.image %}data-variant-image="{{ variant.image.url }}"{% endif %}
+                                {% if forloop.first %}checked{% endif %}
+                            >
+                            <label
+                                for="variant-{{ variant.name|slugify }}"
+                                class="variant-swatch"
                                 {% if variant.color_hex %}style="--swatch-color: {{ variant.color_hex }};"{% endif %}
                             >
                                 <span class="swatch-dot"></span>
                                 <span>{{ variant.name }}</span>
-                            </button>
+                            </label>
                         {% endfor %}
                     </div>
                 </div>
-                <input type="hidden" id="variation" name="variation" value="{{ default_variant.name }}">
             {% elif product.get_variation_list %}
                 <div class="field">
                     <label for="variation">Option</label>
@@ -112,10 +119,9 @@
         const slides = Array.from(document.querySelectorAll("[data-gallery-slide]"));
         const thumbButtons = Array.from(document.querySelectorAll("[data-gallery-thumb]"));
         const nextButton = document.querySelector("[data-gallery-next]");
-        const variantButtons = Array.from(document.querySelectorAll("[data-variant-button]"));
+        const variantRadios = Array.from(document.querySelectorAll("[data-variant-radio]"));
         const variantCopy = document.querySelector("[data-variant-copy]");
         const variantSelected = document.querySelector("[data-variant-selected]");
-        const variationInput = document.querySelector("#variation");
 
         if (galleryRoot && track && slides.length) {
             let currentIndex = 0;
@@ -140,33 +146,36 @@
             });
         }
 
-        variantButtons.forEach((button, index) => {
-            button.addEventListener("click", () => {
-                variantButtons.forEach((otherButton) => otherButton.classList.remove("active"));
-                button.classList.add("active");
+        variantRadios.forEach((radio) => {
+            const syncVariantState = () => {
+                const activeRadio = variantRadios.find((item) => item.checked) || radio;
+                const activeName = activeRadio.dataset.variantName || "Selected";
+                const activeDescription = activeRadio.dataset.variantDescription || "";
+                const activeImage = activeRadio.dataset.variantImage || "";
 
-                if (variationInput) {
-                    variationInput.value = button.dataset.variantName || "";
-                }
+                variantRadios.forEach((item) => {
+                    const label = document.querySelector(`label[for="${item.id}"]`);
+                    label?.classList.toggle("active", item.checked);
+                });
 
                 if (variantSelected) {
-                    variantSelected.textContent = button.dataset.variantName || "Selected";
+                    variantSelected.textContent = activeName;
                 }
 
-                if (variantCopy) {
-                    variantCopy.textContent = button.dataset.variantDescription || variantCopy.textContent;
+                if (variantCopy && activeDescription) {
+                    variantCopy.textContent = activeDescription;
                 }
 
-                const matchingThumb = thumbButtons.find((thumb) => thumb.dataset.imageUrl === button.dataset.variantImage);
+                const matchingThumb = thumbButtons.find((thumb) => thumb.dataset.imageUrl === activeImage);
                 if (matchingThumb) {
                     matchingThumb.click();
                     return;
                 }
 
-                if (button.dataset.variantImage && track && slides.length) {
+                if (activeImage && track && slides.length) {
                     const fallbackSlideIndex = slides.findIndex((slide) => {
                         const image = slide.querySelector("img");
-                        return image && image.getAttribute("src") === button.dataset.variantImage;
+                        return image && image.getAttribute("src") === activeImage;
                     });
                     if (fallbackSlideIndex >= 0) {
                         track.style.transform = `translateX(-${fallbackSlideIndex * 100}%)`;
@@ -174,6 +183,12 @@
                         thumbButtons.forEach((thumbButton, thumbIndex) => thumbButton.classList.toggle("active", thumbIndex === fallbackSlideIndex));
                     }
                 }
+            };
+
+            radio.addEventListener("change", syncVariantState);
+
+            if (radio.checked) {
+                syncVariantState();
             });
         });
     })();

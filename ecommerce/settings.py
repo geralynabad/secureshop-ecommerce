@@ -23,7 +23,7 @@ SECRET_KEY = config("SECRET_KEY", default="dev-only-insecure-key-change-me")
 FIELD_ENCRYPTION_KEY = config(
     "FIELD_ENCRYPTION_KEY", default=Fernet.generate_key().decode()
 )
-DEBUG = config("DEBUG", default=False, cast=bool)
+DEBUG = config("DEBUG", default=True, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=Csv())
 
 # Render sets this automatically for every web service — no manual .env
