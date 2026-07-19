@@ -497,13 +497,20 @@ a:hover { text-decoration: underline; }
 .variant-panel-header { display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 0.75rem; }
 .variant-label { font-size: 0.82rem; font-weight: 700; color: var(--primary-dark); text-transform: uppercase; letter-spacing: 0.08em; }
 .variant-note { font-size: 0.82rem; color: var(--muted); }
-.variant-swatches { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+.variant-swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    gap: 0.7rem;
+}
 .variant-swatch {
     --swatch-color: var(--primary);
     display: inline-flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 0.55rem;
-    padding: 0.65rem 0.85rem;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.75rem 0.9rem;
     border-radius: 999px;
     border: 1px solid var(--border);
     background: var(--card);
@@ -511,6 +518,7 @@ a:hover { text-decoration: underline; }
     font: inherit;
     font-size: 0.9rem;
     color: var(--ink);
+    text-align: left;
     transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
 }
 .variant-swatch:hover { transform: translateY(-1px); border-color: var(--primary); }
@@ -532,6 +540,12 @@ a:hover { text-decoration: underline; }
 
 @media (max-width: 720px) {
     .detail-placeholder-stack { min-height: 300px; grid-template-areas: "large" "medium" "small"; }
+    .variant-swatches { grid-template-columns: 1fr 1fr; }
+    .variant-swatch { min-height: 3.25rem; font-size: 0.88rem; }
+}
+
+@media (max-width: 480px) {
+    .variant-swatches { grid-template-columns: 1fr; }
 }
 
 /* ==========================================================================

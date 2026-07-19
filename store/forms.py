@@ -33,7 +33,7 @@ def validate_product_image(image_file):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ["category", "name", "description", "price", "stock", "image", "variation_options", "is_active"]
+        fields = ["category", "name", "description", "price", "stock", "image", "is_active"]
 
     def clean_image(self):
         image = self.cleaned_data.get("image")

@@ -1,11 +1,14 @@
 from django.contrib import admin
-from .models import Category, Product, ProductImage, ProductVariant
+
 from .forms import ProductForm
+from .models import Category, Product, ProductImage, ProductVariant
 
 
-class ProductVariantInline(admin.TabularInline):
+class ProductVariantInline(admin.StackedInline):
     model = ProductVariant
     extra = 1
+    fields = ("name", "color_hex", "brief_description", "image", "sort_order", "is_active")
+    classes = ("collapse",)
 
 
 class ProductImageInline(admin.TabularInline):

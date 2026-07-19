@@ -1,10 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ product.name }}{% endblock %}
 {% block content %}
-<div class="detail-banner">
-    <strong>New product preview</strong>
-    <span>Color swatches, brief variant copy, and a photo carousel are now built into product pages.</span>
-</div>
 <div class="product-detail">
     <div class="product-media">
         {% if hero_image and not hero_image.placeholder %}
@@ -93,16 +89,6 @@
                     </div>
                 </div>
                 <input type="hidden" id="variation" name="variation" value="{{ default_variant.name }}">
-            {% else %}
-                <div class="field">
-                    <label for="variation">Option</label>
-                    <select id="variation" name="variation" required>
-                        <option value="" disabled selected>Choose an option&hellip;</option>
-                        {% for option in product.get_variation_list %}
-                            <option value="{{ option }}">{{ option }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
             {% endif %}
             <div class="field">
                 <label for="qty">Quantity</label>
