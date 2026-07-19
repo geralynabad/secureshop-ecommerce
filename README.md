@@ -22,7 +22,8 @@ python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # fill in SECRET_KEY, FIELD_ENCRYPTION_KEY, PayMongo, and PayPal keys
 python manage.py migrate
-python manage.py seed_demo_data   # creates admin/AdminPass123! + sample products + demo vouchers
+python manage.py seed_demo_data       # 12 categories, 25 products, demo vouchers — no accounts
+python manage.py seed_demo_accounts   # local/test-only admin + security-scan test user (see warning below)
 python manage.py runserver
 ```
 
@@ -31,6 +32,14 @@ Visit `http://127.0.0.1:8000/`. Admin panel at `/admin/`
 it's a seeded demo credential only). `.env.example` ships with a working
 example `FIELD_ENCRYPTION_KEY` so this runs out of the box — generate your
 own before using this for anything real (instructions in that file).
+
+**`seed_demo_accounts` is local/test-only and deliberately not part of the
+deploy process** — it creates accounts with known, publicly-documented
+passwords (right there in this README), which is fine on your own machine
+but would be a real vulnerability on a live site. For your actual
+production admin account, use `python manage.py createsuperuser`
+(interactively) or the `DJANGO_SUPERUSER_*` environment variables described
+in "Deploying to Render" below.
 
 ## Payment providers
 
@@ -121,7 +130,7 @@ These solve two different problems and this app deliberately uses both:
 
 ## Catalog
 
-Seeded via `seed_demo_data` with **12 categories** and 25 sample products: Office Supplies, Electronics, Home & Living, Health & Beauty, Groceries, Toys & Games, Fashion & Apparel, Sports & Outdoors, Books & Stationery, Pet Supplies, Automotive, and Mobile & Gadgets.
+Seeded via `seed_demo_data` (categories/products/vouchers) with **12 categories** and 25 sample products: Office Supplies, Electronics, Home & Living, Health & Beauty, Groceries, Toys & Games, Fashion & Apparel, Sports & Outdoors, Books & Stationery, Pet Supplies, Automotive, and Mobile & Gadgets.
 
 ## Automated tests
 
@@ -140,7 +149,7 @@ python manage.py test
 
 The `security_testing/` folder contains:
 - **Security_Vulnerability_Report.docx** — full write-up of the vulnerability assessment, mapped to OWASP Top 10 (2021), with findings and remediation. Written against the original Stripe-based payment integration; the payment-provider swap to PayMongo/PayPal since then follows the same verified-server-side-confirmation pattern described in the A08 row above, but hasn't been re-scanned.
-- **security_scan.py** — the automated test harness used to produce it (run against a live local instance; OWASP ZAP itself wasn't installable in this offline build environment, so this script covers the same check categories: headers, cookies, CSRF, XSS, SQL injection, open redirects, authentication, and access control).
+- **security_scan.py** — the automated test harness used to produce it (run against a live local instance with `python manage.py seed_demo_accounts` already applied, since the script logs in as `security_test_user`; OWASP ZAP itself wasn't installable in this offline build environment, so this script covers the same check categories: headers, cookies, CSRF, XSS, SQL injection, open redirects, authentication, and access control).
 - **scan_results.txt** — raw output from that scan run (16/17 checks passed; the one finding is a dev-server-only header disclosure, addressed in the report).
 
 `SecureShop_Presentation.pptx` in the project root summarizes the project, architecture, security design, and test results for presentation purposes (also describes the original Stripe integration — the slides haven't been updated for the PayMongo/PayPal swap).
@@ -151,13 +160,14 @@ This project ships deploy-ready for [Render](https://render.com) (free tier, no 
 
 1. Push this project to a GitHub repository.
 2. On [Render](https://dashboard.render.com/blueprints), click **New Blueprint Instance** and connect that repository. Render reads `render.yaml` automatically.
-3. You'll be prompted for the environment variables that don't have a safe default — `FIELD_ENCRYPTION_KEY`, and your PayMongo/PayPal keys (see `.env.example` for where to get each). `SECRET_KEY` and `DATABASE_URL` are generated/wired automatically.
-4. Click **Apply**. First deploy takes a few minutes.
-5. Once live, open the **Shell** tab on your web service (in the Render dashboard) and run:
-   ```bash
-   python manage.py createsuperuser
-   python manage.py seed_demo_data   # optional — sample products/categories/vouchers
-   ```
+3. You'll be prompted for the environment variables that don't have a safe default:
+   - `FIELD_ENCRYPTION_KEY` and your PayMongo/PayPal keys (see `.env.example` for where to get each)
+   - `DJANGO_SUPERUSER_USERNAME` / `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD` — **Render's free tier has no Shell access**, so this is how your admin account actually gets created (`build.sh` runs `createsuperuser --noinput` from these on deploy; safe to leave set permanently — it's a no-op on every deploy after the first). Pick a real username/password here, not the local demo ones.
+   - `SECRET_KEY` and `DATABASE_URL` are generated/wired automatically — no prompt for those.
+4. Click **Apply**. First deploy takes a few minutes — watch the **Logs** tab.
+5. Want the sample catalog (12 categories, 25 products, demo vouchers)? Set `SEED_DEMO_DATA=true` under your web service's **Environment** tab (off by default) and it'll populate on the next deploy. It's catalog-only — no accounts get created this way, unlike the local `seed_demo_accounts` command.
+
+**Do not run `seed_demo_accounts` against a live Render deployment** — it creates an account with a password printed right there in this README, which is fine on your own machine and actively dangerous on a public site. Your real admin login comes from the `DJANGO_SUPERUSER_*` variables in step 3 instead.
 
 **Two free-tier limitations worth knowing about before you rely on this:**
 - Render's free Postgres database is deleted 30 days after creation (with a 14-day warning window to upgrade) — fine for a demo/capstone submission, not for anything long-lived without upgrading to a paid database.
@@ -169,7 +179,7 @@ This project ships deploy-ready for [Render](https://render.com) (free tier, no 
 2. Set `ALLOWED_HOSTS` to your real domain(s) — Render's own `.onrender.com` hostname is added automatically, no config needed for that part.
 3. Put this behind HTTPS (already assumed by `SECURE_SSL_REDIRECT`/HSTS in `settings.py` — Render provides this automatically; a different host needs its own TLS termination, e.g. nginx + Let's Encrypt).
 4. Use Postgres, not SQLite, for concurrent write safety (Render's blueprint does this for you).
-5. Rotate the seeded `admin` password (or delete that account and create a real one).
+5. Never run `seed_demo_accounts` against a real deployment — it's local/test-only by design (see above). Use `DJANGO_SUPERUSER_*` or interactive `createsuperuser` for your real admin account instead.
 6. Run `pip install pip-audit && pip-audit` to check for known CVEs in dependencies.
 7. Switch `PAYMONGO_SECRET_KEY`/`PAYMONGO_PUBLIC_KEY` to live keys and register the real webhook endpoint + secret in the PayMongo Dashboard.
 8. Switch `PAYPAL_MODE=live` and use live PayPal Client ID/Secret from a verified business account.

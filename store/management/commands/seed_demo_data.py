@@ -1,29 +1,20 @@
 from django.core.management.base import BaseCommand
 from store.models import Category, Product
-from accounts.models import User
 
 
 class Command(BaseCommand):
-    help = "Seeds the database with a demo admin user, categories, and products."
+    help = (
+        "Seeds the database with demo categories, products, and vouchers "
+        "only — no accounts. Idempotent (safe to run repeatedly, including "
+        "automatically on every deploy — see build.sh). For local/test "
+        "demo accounts (admin login, security-scan test user), use "
+        "`python manage.py seed_demo_accounts` instead — that one is "
+        "deliberately NOT wired into the deploy process, since auto-creating "
+        "an account with a known, publicly-documented password on a live "
+        "site would be a real vulnerability, not just a convenience."
+    )
 
     def handle(self, *args, **options):
-        if not User.objects.filter(username="admin").exists():
-            User.objects.create_superuser("admin", "admin@example.com", "AdminPass123!")
-            self.stdout.write(self.style.SUCCESS(
-                "Created superuser 'admin' / 'AdminPass123!' — change this password immediately."
-            ))
-
-        # Dedicated account for automated security testing (kept separate
-        # from 'admin' so brute-force/lockout tests don't interfere with
-        # other checks run in the same scan).
-        test_user, _ = User.objects.get_or_create(
-            username="security_test_user", defaults={"email": "sectest@example.com"}
-        )
-        test_user.set_password("KnownGoodPass123")
-        test_user.failed_login_attempts = 0
-        test_user.locked_until = None
-        test_user.save()
-
         office, _ = Category.objects.get_or_create(name="Office Supplies")
         electronics, _ = Category.objects.get_or_create(name="Electronics")
         home_living, _ = Category.objects.get_or_create(name="Home & Living")

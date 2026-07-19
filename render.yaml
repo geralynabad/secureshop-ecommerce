@@ -38,3 +38,16 @@ services:
         sync: false
       - key: PAYPAL_MODE
         value: sandbox
+      # Free-tier Render has no Shell access, so build.sh creates your admin
+      # account non-interactively from these instead of `createsuperuser`
+      # run by hand. Set all three, or leave all three blank to skip.
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      # Set to "true" to auto-populate the sample catalog (categories,
+      # products, vouchers — no accounts) on every deploy. Off by default.
+      - key: SEED_DEMO_DATA
+        value: "false"
