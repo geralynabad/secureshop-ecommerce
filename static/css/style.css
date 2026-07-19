@@ -261,7 +261,7 @@ a:hover { text-decoration: underline; }
 .listing-layout { display: flex; gap: 2.5rem; align-items: flex-start; }
 .category-filter {
     min-width: 230px;
-    padding: 1.1rem;
+    padding: 1.25rem;
     border-radius: var(--radius-lg);
     background:
         linear-gradient(180deg, rgba(15, 91, 82, 0.96) 0%, rgba(10, 64, 58, 0.98) 100%);
@@ -270,6 +270,7 @@ a:hover { text-decoration: underline; }
     position: sticky;
     top: 6rem;
     overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .category-filter::before {
     content: "";
@@ -281,13 +282,24 @@ a:hover { text-decoration: underline; }
     pointer-events: none;
 }
 .category-filter > * { position: relative; z-index: 1; }
+.category-filter-eyebrow {
+    margin: 0 0 0.35rem;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: rgba(248, 245, 239, 0.7);
+}
 .category-filter h3 {
     font-family: var(--font-body);
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: rgba(248, 245, 239, 0.82);
-    margin-bottom: 0.9rem;
+    font-size: 1.35rem;
+    letter-spacing: -0.02em;
+    color: #FFFFFF;
+    margin-bottom: 0.3rem;
+}
+.category-filter-copy {
+    margin: 0 0 1rem;
+    color: rgba(248, 245, 239, 0.8);
+    font-size: 0.86rem;
 }
 .category-filter ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.55rem; }
 .category-filter li { margin: 0; }
@@ -302,12 +314,23 @@ a:hover { text-decoration: underline; }
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 }
+.category-filter a.active {
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--primary-dark);
+    border-color: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+}
 .category-filter a:hover {
     color: #FFFFFF;
     text-decoration: none;
     transform: translateX(3px);
     background: rgba(255, 255, 255, 0.16);
     border-color: rgba(255, 255, 255, 0.18);
+}
+.category-filter a.active:hover {
+    color: var(--primary-dark);
+    background: #FFFFFF;
+    border-color: #FFFFFF;
 }
 
 .product-grid {

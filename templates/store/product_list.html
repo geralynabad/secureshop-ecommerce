@@ -3,11 +3,13 @@
 {% block content %}
 <div class="listing-layout">
     <aside class="category-filter">
+        <p class="category-filter-eyebrow">Browse</p>
         <h3>Categories</h3>
+        <p class="category-filter-copy">A calmer palette and clearer category focus.</p>
         <ul>
-            <li><a href="{% url 'store:product_list' %}">All</a></li>
+            <li><a href="{% url 'store:product_list' %}" class="{% if not request.GET.category %}active{% endif %}">All</a></li>
             {% for category in categories %}
-                <li><a href="?category={{ category.slug }}">{{ category.name }}</a></li>
+                <li><a href="?category={{ category.slug }}" class="{% if request.GET.category == category.slug %}active{% endif %}">{{ category.name }}</a></li>
             {% endfor %}
         </ul>
     </aside>
