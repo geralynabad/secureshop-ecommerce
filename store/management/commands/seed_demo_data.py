@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from store.models import Category, Product
+from store.models import Category, Product, ProductVariant
 
 
 class Command(BaseCommand):
@@ -90,6 +90,40 @@ class Command(BaseCommand):
         for data in demo_products:
             _, was_created = Product.objects.get_or_create(name=data["name"], defaults=data)
             created += int(was_created)
+
+        variant_specs = [
+            ("Wireless Mouse", [
+                {"name": "Black", "color_hex": "#2E3138", "brief_description": "Matte black finish with a clean, understated look."},
+                {"name": "White", "color_hex": "#F4F2EC", "brief_description": "Bright white shell for a lighter desk setup."},
+                {"name": "Grey", "color_hex": "#8D949D", "brief_description": "Soft grey finish that blends into any workspace."},
+            ]),
+            ("Cotton Crew T-Shirt", [
+                {"name": "Small", "color_hex": "#D8CBB8", "brief_description": "Close, everyday fit for a more tailored feel."},
+                {"name": "Medium", "color_hex": "#B7A48B", "brief_description": "Balanced fit for relaxed daily wear."},
+                {"name": "Large", "color_hex": "#8D7E6B", "brief_description": "Roomier cut with the same soft cotton feel."},
+                {"name": "XL", "color_hex": "#5B5348", "brief_description": "Extra room without losing the clean silhouette."},
+            ]),
+            ("Bluetooth Earbuds", [
+                {"name": "Black", "color_hex": "#22252B", "brief_description": "Low-profile black finish for a minimal look."},
+                {"name": "White", "color_hex": "#F3F0EA", "brief_description": "Bright white finish that feels light and modern."},
+            ]),
+        ]
+
+        for product_name, variants in variant_specs:
+            product = Product.objects.filter(name=product_name).first()
+            if not product:
+                continue
+            for order, variant_data in enumerate(variants):
+                ProductVariant.objects.update_or_create(
+                    product=product,
+                    name=variant_data["name"],
+                    defaults={
+                        "color_hex": variant_data["color_hex"],
+                        "brief_description": variant_data["brief_description"],
+                        "sort_order": order,
+                        "is_active": True,
+                    },
+                )
 
         self.stdout.write(self.style.SUCCESS(f"Seed complete. {created} new products created."))
 

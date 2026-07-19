@@ -2,15 +2,32 @@
 {% block title %}{{ product.name }}{% endblock %}
 {% block content %}
 <div class="product-detail">
-    {% if product.image %}
-        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="detail-img">
-    {% else %}
-        <div class="img-placeholder detail-img" style="aspect-ratio: 1/1; display:flex; align-items:center; justify-content:center;">No image</div>
-    {% endif %}
-    <div class="detail-info">
+    <div class="product-media">
+        {% if hero_image %}
+            <div class="gallery-shell" data-product-gallery>
+                <button class="gallery-nav gallery-prev" type="button" aria-label="Previous image" data-gallery-prev>&lsaquo;</button>
+                <img src="{{ hero_image.url }}" alt="{{ hero_image.alt }}" class="detail-img gallery-main" data-gallery-main>
+                <button class="gallery-nav gallery-next" type="button" aria-label="Next image" data-gallery-next>&rsaquo;</button>
+            </div>
+            {% if gallery_items|length > 1 %}
+                <div class="gallery-thumbs" data-gallery-thumbs>
+                    {% for image in gallery_items %}
+                        <button type="button" class="gallery-thumb{% if forloop.first %} active{% endif %}" data-gallery-thumb data-image-url="{{ image.url }}" data-image-alt="{{ image.alt }}">
+                            <img src="{{ image.url }}" alt="{{ image.alt }}">
+                        </button>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="img-placeholder detail-img detail-placeholder">No product images yet</div>
+        {% endif %}
+    </div>
+
+    <div class="detail-info detail-card">
         <h1>{{ product.name }}</h1>
         <span class="price">₱{{ product.price }}</span>
-        <p>{{ product.description|linebreaks }}</p>
+        <p class="product-summary" data-variant-copy>{{ selected_description }}</p>
+        <p class="product-description">{{ product.description|linebreaks }}</p>
         <p class="stock {% if not product.in_stock %}out{% endif %}">
             {% if product.in_stock %}{{ product.stock }} in stock{% else %}Out of stock{% endif %}
         </p>
@@ -18,19 +35,41 @@
         {% if product.in_stock %}
         <form action="{% url 'cart:cart_add' product.id %}" method="post" class="add-to-cart-form" data-ajax-cart>
             {% csrf_token %}
-            {% with variations=product.get_variation_list %}
-                {% if variations %}
+            {% if variants %}
+                <div class="variant-panel">
+                    <div class="variant-panel-header">
+                        <span class="variant-label">Color</span>
+                        <span class="variant-note">Choose a finish to update the photo and description.</span>
+                    </div>
+                    <div class="variant-swatches" data-variant-swatches>
+                        {% for variant in variants %}
+                            <button
+                                type="button"
+                                class="variant-swatch{% if forloop.first %} active{% endif %}"
+                                data-variant-button
+                                data-variant-name="{{ variant.name }}"
+                                data-variant-description="{{ variant.brief_description|default:product.description }}"
+                                {% if variant.image %}data-variant-image="{{ variant.image.url }}"{% endif %}
+                                {% if variant.color_hex %}style="--swatch-color: {{ variant.color_hex }};"{% endif %}
+                            >
+                                <span class="swatch-dot"></span>
+                                <span>{{ variant.name }}</span>
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <input type="hidden" id="variation" name="variation" value="{{ default_variant.name }}">
+            {% else %}
                 <div class="field">
                     <label for="variation">Option</label>
                     <select id="variation" name="variation" required>
                         <option value="" disabled selected>Choose an option&hellip;</option>
-                        {% for option in variations %}
+                        {% for option in product.get_variation_list %}
                             <option value="{{ option }}">{{ option }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                {% endif %}
-            {% endwith %}
+            {% endif %}
             <div class="field">
                 <label for="qty">Quantity</label>
                 <input type="number" id="qty" name="quantity" value="1" min="1" max="{{ product.stock }}" class="qty-input">
@@ -40,4 +79,73 @@
         {% endif %}
     </div>
 </div>
+
+{% if variants or gallery_items %}
+<script>
+    (function () {
+        const galleryRoot = document.querySelector("[data-product-gallery]");
+        const mainImage = document.querySelector("[data-gallery-main]");
+        const thumbButtons = Array.from(document.querySelectorAll("[data-gallery-thumb]"));
+        const prevButton = document.querySelector("[data-gallery-prev]");
+        const nextButton = document.querySelector("[data-gallery-next]");
+        const variantButtons = Array.from(document.querySelectorAll("[data-variant-button]"));
+        const variantCopy = document.querySelector("[data-variant-copy]");
+        const variationInput = document.querySelector("#variation");
+
+        if (galleryRoot && mainImage && thumbButtons.length) {
+            let currentIndex = 0;
+
+            const setThumbActive = (index) => {
+                currentIndex = index;
+                thumbButtons.forEach((button, buttonIndex) => {
+                    button.classList.toggle("active", buttonIndex === index);
+                });
+                const thumb = thumbButtons[index];
+                mainImage.src = thumb.dataset.imageUrl;
+                mainImage.alt = thumb.dataset.imageAlt || "Product image";
+            };
+
+            thumbButtons.forEach((button, index) => {
+                button.addEventListener("click", () => setThumbActive(index));
+            });
+
+            prevButton?.addEventListener("click", () => {
+                setThumbActive((currentIndex - 1 + thumbButtons.length) % thumbButtons.length);
+            });
+
+            nextButton?.addEventListener("click", () => {
+                setThumbActive((currentIndex + 1) % thumbButtons.length);
+            });
+        }
+
+        variantButtons.forEach((button, index) => {
+            button.addEventListener("click", () => {
+                variantButtons.forEach((otherButton) => otherButton.classList.remove("active"));
+                button.classList.add("active");
+
+                if (variationInput) {
+                    variationInput.value = button.dataset.variantName || "";
+                }
+
+                if (variantCopy) {
+                    variantCopy.textContent = button.dataset.variantDescription || variantCopy.textContent;
+                }
+
+                if (mainImage && button.dataset.variantImage) {
+                    mainImage.src = button.dataset.variantImage;
+                    mainImage.alt = button.dataset.variantName || mainImage.alt;
+                }
+
+                const matchingThumb = thumbButtons.find((thumb) => thumb.dataset.imageUrl === button.dataset.variantImage);
+                if (matchingThumb) {
+                    const thumbIndex = thumbButtons.indexOf(matchingThumb);
+                    thumbButtons.forEach((thumbButton) => thumbButton.classList.remove("active"));
+                    matchingThumb.classList.add("active");
+                    currentIndex = thumbIndex;
+                }
+            });
+        });
+    })();
+</script>
+{% endif %}
 {% endblock %}

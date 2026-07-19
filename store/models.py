@@ -58,7 +58,46 @@ class Product(models.Model):
         return self.stock > 0
 
     def get_variation_list(self):
+        variant_names = [variant.name for variant in self.get_active_variants()]
+        if variant_names:
+            return variant_names
         return [v.strip() for v in self.variation_options.split(",") if v.strip()]
+
+    def get_active_variants(self):
+        return self.variants.filter(is_active=True).order_by("sort_order", "name")
+
+    def get_gallery_images(self):
+        return self.gallery_images.all().order_by("sort_order", "id")
 
     def __str__(self):
         return self.name
+
+
+class ProductVariant(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
+    name = models.CharField(max_length=100)
+    color_hex = models.CharField(max_length=7, blank=True, default="")
+    brief_description = models.CharField(max_length=255, blank=True)
+    image = models.ImageField(upload_to="products/variants/%Y/%m/", blank=True, null=True)
+    sort_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+        constraints = [models.UniqueConstraint(fields=["product", "name"], name="unique_product_variant_name")]
+
+    def __str__(self):
+        return f"{self.product.name} - {self.name}"
+
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="gallery_images")
+    image = models.ImageField(upload_to="products/gallery/%Y/%m/")
+    alt_text = models.CharField(max_length=255, blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+
+    def __str__(self):
+        return f"{self.product.name} gallery image"

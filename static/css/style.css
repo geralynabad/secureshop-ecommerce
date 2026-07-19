@@ -363,14 +363,101 @@ a:hover { text-decoration: underline; }
 /* ==========================================================================
    Product detail
    ========================================================================== */
-.product-detail { display: flex; gap: 3rem; flex-wrap: wrap; }
-.detail-img { max-width: 420px; width: 100%; border-radius: var(--radius-lg); box-shadow: var(--shadow); }
+.product-detail { display: flex; gap: 2.5rem; flex-wrap: wrap; align-items: flex-start; }
+.product-media { flex: 1; min-width: 300px; max-width: 520px; }
+.detail-card { background: rgba(255, 255, 255, 0.84); border: 1px solid rgba(228, 225, 216, 0.9); border-radius: var(--radius-lg); padding: 1.4rem; box-shadow: var(--shadow-sm); backdrop-filter: blur(8px); }
+.detail-img { width: 100%; border-radius: var(--radius-lg); box-shadow: var(--shadow); display: block; }
+.detail-placeholder { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
 .detail-info { flex: 1; min-width: 280px; }
 .detail-info .price { font-size: 1.5rem; display: block; margin: 0.4rem 0 0.8rem; }
 .detail-info .stock { font-size: 0.88rem; margin-bottom: 1.2rem; }
-.add-to-cart-form { display: flex; flex-direction: column; gap: 1rem; max-width: 320px; }
+.product-summary { font-size: 1rem; color: var(--ink); margin: 0.2rem 0 0.6rem; }
+.product-description { color: var(--muted); margin: 0 0 1rem; }
+.add-to-cart-form { display: flex; flex-direction: column; gap: 1rem; max-width: 380px; }
 .add-to-cart-form .field { margin-bottom: 0; }
 .qty-input { width: 90px; }
+
+.gallery-shell {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--card);
+    box-shadow: var(--shadow);
+}
+.gallery-main { aspect-ratio: 1 / 1; object-fit: cover; }
+.gallery-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2.35rem;
+    height: 2.35rem;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--primary-dark);
+    font-size: 1.3rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+}
+.gallery-prev { left: 0.8rem; }
+.gallery-next { right: 0.8rem; }
+.gallery-thumbs {
+    display: flex;
+    gap: 0.65rem;
+    margin-top: 0.8rem;
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+}
+.gallery-thumb {
+    width: 4.4rem;
+    height: 4.4rem;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 0;
+    overflow: hidden;
+    background: var(--paper);
+    flex: 0 0 auto;
+    cursor: pointer;
+}
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gallery-thumb.active { border-color: var(--primary); box-shadow: 0 8px 18px rgba(15, 91, 82, 0.16); }
+
+.variant-panel { margin-top: 1rem; }
+.variant-panel-header { display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 0.75rem; }
+.variant-label { font-size: 0.82rem; font-weight: 700; color: var(--primary-dark); text-transform: uppercase; letter-spacing: 0.08em; }
+.variant-note { font-size: 0.82rem; color: var(--muted); }
+.variant-swatches { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+.variant-swatch {
+    --swatch-color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--ink);
+    transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+.variant-swatch:hover { transform: translateY(-1px); border-color: var(--primary); }
+.variant-swatch.active {
+    background: var(--primary-tint);
+    border-color: var(--primary);
+    box-shadow: 0 10px 22px rgba(15, 91, 82, 0.12);
+}
+.swatch-dot {
+    width: 0.95rem;
+    height: 0.95rem;
+    border-radius: 999px;
+    background: var(--swatch-color);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+    flex-shrink: 0;
+}
 
 /* ==========================================================================
    Cart page
