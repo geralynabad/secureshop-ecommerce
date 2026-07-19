@@ -22,6 +22,35 @@ from .models import Order, OrderItem, Voucher
 logger = logging.getLogger("orders")
 
 
+def _reconcile_paymongo_order(order):
+    """Promote a pending PayMongo order to PAID when the checkout session
+    shows a successful payment.
+
+    This is used on both the success page and the orders page so the UI can
+    self-correct even if the webhook lands after the browser redirect.
+    """
+    if order.status != Order.Status.PENDING or order.payment_provider != Order.PaymentProvider.PAYMONGO:
+        return
+    if not order.external_session_id:
+        return
+
+    try:
+        session = paymongo_client.get_checkout_session(order.external_session_id)
+    except paymongo_client.PayMongoError:
+        logger.info("Could not reconcile PayMongo order %s.", order.id)
+        return
+
+    session_attrs = session.get("attributes", {})
+    payment_intent = session_attrs.get("payment_intent", {})
+    payments = session_attrs.get("payments", [])
+    payment_status = payment_intent.get("status", "")
+    linked_payment_status = next((payment.get("attributes", {}).get("status", "") for payment in payments), "")
+    linked_payment_id = next((payment.get("id", "") for payment in payments if payment.get("id")), "")
+
+    if payment_status == "succeeded" or linked_payment_status == "paid":
+        _mark_order_paid(order, external_payment_id=linked_payment_id or order.external_session_id)
+
+
 def _create_order_from_cart(request, cart, shipping_data, selected_product_ids):
     """
     Re-validates stock, price, and voucher eligibility for every *selected*
@@ -171,24 +200,7 @@ def order_success(request, order_id):
     if order.user_id != request.user.id and not request.user.is_staff:
         raise PermissionDenied
 
-    if (
-        order.status == Order.Status.PENDING
-        and order.payment_provider == Order.PaymentProvider.PAYMONGO
-        and order.external_session_id
-    ):
-        try:
-            session = paymongo_client.get_checkout_session(order.external_session_id)
-        except paymongo_client.PayMongoError:
-            logger.info("Could not reconcile PayMongo order %s on success page.", order.id)
-        else:
-            session_attrs = session.get("attributes", {})
-            payment_intent = session_attrs.get("payment_intent", {})
-            payments = session_attrs.get("payments", [])
-            payment_status = payment_intent.get("status", "")
-            linked_payment_status = next((payment.get("attributes", {}).get("status", "") for payment in payments), "")
-
-            if payment_status == "succeeded" or linked_payment_status == "paid":
-                _mark_order_paid(order, external_payment_id=session.get("id", order.external_session_id))
+    _reconcile_paymongo_order(order)
 
     return render(request, "orders/order_success.html", {"order": order})
 
@@ -204,6 +216,11 @@ TAB_STATUS_MAP = {
 def order_history(request):
     tab = request.GET.get("tab", "all")
     orders = Order.objects.filter(user=request.user).prefetch_related("items__product")
+
+    for order in orders:
+        _reconcile_paymongo_order(order)
+
+    orders = orders.filter(user=request.user).prefetch_related("items__product")
 
     if tab in TAB_STATUS_MAP:
         orders = orders.filter(status=TAB_STATUS_MAP[tab])

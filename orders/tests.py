@@ -629,6 +629,25 @@ class PayMongoSuccessPageReconciliationTests(TestCase):
         self.assertEqual(self.order.external_payment_id, "cs_test_123")
         self.assertEqual(self.product.stock, 4)
 
+    @patch("orders.views.paymongo_client.get_checkout_session")
+    def test_order_history_reconciles_pending_paymongo_order(self, mock_get_session):
+        mock_get_session.return_value = {
+            "id": "cs_test_123",
+            "attributes": {
+                "payment_intent": {"status": "succeeded"},
+                "payments": [{"id": "pay_test_123", "attributes": {"status": "paid"}}],
+            },
+        }
+
+        response = self.client.get(reverse("orders:order_history"))
+
+        self.assertEqual(response.status_code, 200)
+        self.order.refresh_from_db()
+        self.product.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.PAID)
+        self.assertEqual(self.order.external_payment_id, "pay_test_123")
+        self.assertEqual(self.product.stock, 4)
+
 
 class PayPalCaptureSecurityTests(TestCase):
     """PayPal has no signature-verified webhook in this integration — instead,
