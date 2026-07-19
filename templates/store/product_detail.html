@@ -3,7 +3,7 @@
 {% block content %}
 <div class="product-detail">
     <div class="product-media">
-        {% if hero_image %}
+        {% if hero_image and not hero_image.placeholder %}
             <div class="gallery-shell" data-product-gallery>
                 <button class="gallery-nav gallery-prev" type="button" aria-label="Previous image" data-gallery-prev>&lsaquo;</button>
                 <img src="{{ hero_image.url }}" alt="{{ hero_image.alt }}" class="detail-img gallery-main" data-gallery-main>
@@ -19,7 +19,19 @@
                 </div>
             {% endif %}
         {% else %}
-            <div class="img-placeholder detail-img detail-placeholder">No product images yet</div>
+            <div class="gallery-shell gallery-placeholder-shell">
+                <div class="detail-placeholder detail-placeholder-stack">
+                    <div class="placeholder-card placeholder-card-large">
+                        <span>Front view</span>
+                    </div>
+                    <div class="placeholder-card placeholder-card-medium">
+                        <span>Side angle</span>
+                    </div>
+                    <div class="placeholder-card placeholder-card-small">
+                        <span>Detail shot</span>
+                    </div>
+                </div>
+            </div>
         {% endif %}
     </div>
 
