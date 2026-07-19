@@ -1,5 +1,60 @@
+import hashlib
+from io import BytesIO
+
 from django.core.management.base import BaseCommand
+from django.core.files.base import ContentFile
+from PIL import Image, ImageDraw, ImageFont
 from store.models import Category, Product, ProductVariant
+from store.models import ProductImage
+
+
+PRODUCT_COLORS = [
+    (46, 49, 56),
+    (76, 122, 99),
+    (194, 139, 75),
+    (101, 132, 173),
+    (141, 148, 157),
+    (115, 134, 106),
+]
+
+
+def _text_color(bg_rgb):
+    brightness = (bg_rgb[0] * 299 + bg_rgb[1] * 587 + bg_rgb[2] * 114) / 1000
+    return (255, 255, 255) if brightness < 160 else (31, 37, 34)
+
+
+def _make_demo_image(label, subtitle, base_color, accent_color=None):
+    size = (1200, 1200)
+    image = Image.new("RGB", size, base_color)
+    draw = ImageDraw.Draw(image)
+
+    accent_color = accent_color or tuple(min(255, channel + 30) for channel in base_color)
+    draw.rectangle([80, 80, 1120, 1120], outline=accent_color, width=18)
+    draw.rounded_rectangle([170, 170, 1030, 1030], radius=80, fill=tuple(max(0, channel - 12) for channel in base_color))
+    draw.ellipse([270, 250, 930, 910], outline=accent_color, width=24)
+    draw.line([260, 910, 940, 250], fill=accent_color, width=18)
+
+    title_color = _text_color(base_color)
+    try:
+        font_large = ImageFont.truetype("arial.ttf", 84)
+        font_small = ImageFont.truetype("arial.ttf", 42)
+    except Exception:
+        font_large = ImageFont.load_default()
+        font_small = ImageFont.load_default()
+
+    title_box = draw.textbbox((0, 0), label, font=font_large)
+    subtitle_box = draw.textbbox((0, 0), subtitle, font=font_small)
+    draw.text(((size[0] - (title_box[2] - title_box[0])) / 2, 145), label, font=font_large, fill=title_color)
+    draw.text(((size[0] - (subtitle_box[2] - subtitle_box[0])) / 2, 255), subtitle, font=font_small, fill=title_color)
+
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    return ContentFile(buffer.getvalue())
+
+
+def _assign_image(field_file, filename, label, subtitle, base_color, accent_color=None):
+    content = _make_demo_image(label, subtitle, base_color, accent_color)
+    field_file.save(filename, content, save=False)
 
 
 class Command(BaseCommand):
@@ -88,8 +143,20 @@ class Command(BaseCommand):
         ]
         created = 0
         for data in demo_products:
-            _, was_created = Product.objects.get_or_create(name=data["name"], defaults=data)
+            product, was_created = Product.objects.get_or_create(name=data["name"], defaults=data)
             created += int(was_created)
+
+            if not product.image:
+                index = int(hashlib.sha1(product.name.encode("utf-8")).hexdigest()[:2], 16) % len(PRODUCT_COLORS)
+                base_color = PRODUCT_COLORS[index]
+                _assign_image(
+                    product.image,
+                    f"{product.slug or product.name.lower().replace(' ', '-')}-main.png",
+                    product.name,
+                    product.category.name,
+                    base_color,
+                )
+                product.save(update_fields=["image"])
 
         variant_specs = [
             ("Wireless Mouse", [
@@ -114,7 +181,7 @@ class Command(BaseCommand):
             if not product:
                 continue
             for order, variant_data in enumerate(variants):
-                ProductVariant.objects.update_or_create(
+                variant, _ = ProductVariant.objects.update_or_create(
                     product=product,
                     name=variant_data["name"],
                     defaults={
@@ -124,6 +191,43 @@ class Command(BaseCommand):
                         "is_active": True,
                     },
                 )
+
+                if not variant.image:
+                    _assign_image(
+                        variant.image,
+                        f"{product.slug or product.name.lower().replace(' ', '-')}-{variant.name.lower().replace(' ', '-')}.png",
+                        variant.name,
+                        product.name,
+                        tuple(int(variant.color_hex[i:i+2], 16) for i in (1, 3, 5)) if variant.color_hex else PRODUCT_COLORS[order % len(PRODUCT_COLORS)],
+                    )
+                    variant.save(update_fields=["image"])
+
+        gallery_specs = {
+            "Wireless Mouse": ["Front angle", "Side angle", "Grip detail"],
+            "Cotton Crew T-Shirt": ["Front view", "Folded view", "Fabric close-up"],
+            "Bluetooth Earbuds": ["Case front", "Earbud profile", "Charging angle"],
+        }
+
+        for product_name, labels in gallery_specs.items():
+            product = Product.objects.filter(name=product_name).first()
+            if not product:
+                continue
+            existing = product.gallery_images.count()
+            if existing >= len(labels):
+                continue
+            for offset, label in enumerate(labels):
+                if product.gallery_images.filter(alt_text=label).exists():
+                    continue
+                image = ProductImage(product=product, alt_text=label, sort_order=offset)
+                color = PRODUCT_COLORS[(offset + len(product_name)) % len(PRODUCT_COLORS)]
+                _assign_image(
+                    image.image,
+                    f"{product.slug or product.name.lower().replace(' ', '-')}-{label.lower().replace(' ', '-')}.png",
+                    product.name,
+                    label,
+                    color,
+                )
+                image.save()
 
         self.stdout.write(self.style.SUCCESS(f"Seed complete. {created} new products created."))
 
