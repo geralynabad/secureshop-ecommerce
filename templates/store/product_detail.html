@@ -64,6 +64,7 @@
                         <span class="variant-label">Color</span>
                         <span class="variant-note">Choose a finish to update the photo and description.</span>
                     </div>
+                    <div class="variant-selected" data-variant-selected>{{ default_variant.name }}</div>
                     <div class="variant-swatches" data-variant-swatches>
                         {% for variant in variants %}
                             <button
@@ -113,6 +114,7 @@
         const nextButton = document.querySelector("[data-gallery-next]");
         const variantButtons = Array.from(document.querySelectorAll("[data-variant-button]"));
         const variantCopy = document.querySelector("[data-variant-copy]");
+        const variantSelected = document.querySelector("[data-variant-selected]");
         const variationInput = document.querySelector("#variation");
 
         if (galleryRoot && track && slides.length) {
@@ -147,16 +149,30 @@
                     variationInput.value = button.dataset.variantName || "";
                 }
 
+                if (variantSelected) {
+                    variantSelected.textContent = button.dataset.variantName || "Selected";
+                }
+
                 if (variantCopy) {
                     variantCopy.textContent = button.dataset.variantDescription || variantCopy.textContent;
                 }
 
                 const matchingThumb = thumbButtons.find((thumb) => thumb.dataset.imageUrl === button.dataset.variantImage);
                 if (matchingThumb) {
-                    const thumbIndex = thumbButtons.indexOf(matchingThumb);
-                    thumbButtons.forEach((thumbButton) => thumbButton.classList.remove("active"));
-                    matchingThumb.classList.add("active");
-                    document.querySelector("[data-gallery-track]").style.transform = `translateX(-${thumbIndex * 100}%)`;
+                    matchingThumb.click();
+                    return;
+                }
+
+                if (button.dataset.variantImage && track && slides.length) {
+                    const fallbackSlideIndex = slides.findIndex((slide) => {
+                        const image = slide.querySelector("img");
+                        return image && image.getAttribute("src") === button.dataset.variantImage;
+                    });
+                    if (fallbackSlideIndex >= 0) {
+                        track.style.transform = `translateX(-${fallbackSlideIndex * 100}%)`;
+                        slides.forEach((slide, slideIndex) => slide.classList.toggle("active", slideIndex === fallbackSlideIndex));
+                        thumbButtons.forEach((thumbButton, thumbIndex) => thumbButton.classList.toggle("active", thumbIndex === fallbackSlideIndex));
+                    }
                 }
             });
         });
