@@ -46,6 +46,9 @@ class OrderOwnershipTests(TestCase):
         response = self.client.get(reverse("orders:order_success", args=[self.order.id]))
         self.assertEqual(response.status_code, 302)
 
+    def test_pending_orders_display_as_order_placed(self):
+        self.assertEqual(self.order.get_status_display(), "Order Placed")
+
     def test_order_history_only_shows_own_orders(self):
         Order.objects.create(user=self.intruder, full_name="Intruder", address_line="2 St", city="Cebu", postal_code="6000")
         self.client.login(username="owner", password="OwnerPass123")

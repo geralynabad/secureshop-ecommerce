@@ -11,7 +11,7 @@ from store.models import Product
 
 class Order(models.Model):
     class Status(models.TextChoices):
-        PENDING = "pending", "To Pay"
+        PENDING = "pending", "Order Placed"
         PAID = "paid", "To Ship"
         SHIPPED = "shipped", "To Receive"
         DELIVERED = "delivered", "To Rate"
