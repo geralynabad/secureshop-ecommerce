@@ -68,6 +68,26 @@ def create_checkout_session(order, line_items, success_url, cancel_url):
     return data["id"], data["attributes"]["checkout_url"]
 
 
+def get_checkout_session(session_id):
+    """Retrieve a checkout session with secret-key access.
+
+    The returned payload includes the session attributes and, when available,
+    the linked payment intent / payment records.
+    """
+    try:
+        response = requests.get(
+            f"{PAYMONGO_API_BASE}/checkout_sessions/{session_id}",
+            headers=_auth_header(),
+            timeout=15,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        logger.error("PayMongo checkout session retrieval failed for %s: %s", session_id, exc)
+        raise PayMongoError(str(exc)) from exc
+
+    return response.json()["data"]
+
+
 def create_refund(payment_id, amount_centavos, reason="requested_by_customer", notes=""):
     """
     Reference: https://developers.paymongo.com/reference/create-a-refund

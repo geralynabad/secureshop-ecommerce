@@ -590,6 +590,43 @@ class PayMongoWebhookSecurityTests(TestCase):
         self.assertEqual(product.stock, 3)  # 5 - 2
 
 
+class PayMongoSuccessPageReconciliationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="buyer5", email="b5@example.com", password="BuyerPass123")
+        self.category = Category.objects.create(name="Office Supplies")
+        self.product = Product.objects.create(name="Notebook", category=self.category, price=Decimal("20.00"), stock=6)
+        self.order = Order.objects.create(
+            user=self.user,
+            full_name="Buyer",
+            address_line="1 St",
+            city="Manila",
+            postal_code="1000",
+            payment_provider="paymongo",
+            external_session_id="cs_test_123",
+        )
+        OrderItem.objects.create(order=self.order, product=self.product, price=Decimal("20.00"), quantity=2)
+        self.client.login(username="buyer5", password="BuyerPass123")
+
+    @patch("orders.views.paymongo_client.get_checkout_session")
+    def test_success_page_reconciles_pending_paymongo_order(self, mock_get_session):
+        mock_get_session.return_value = {
+            "id": "cs_test_123",
+            "attributes": {
+                "payment_intent": {"status": "succeeded"},
+                "payments": [{"attributes": {"status": "paid"}}],
+            },
+        }
+
+        response = self.client.get(reverse("orders:order_success", args=[self.order.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.order.refresh_from_db()
+        self.product.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.PAID)
+        self.assertEqual(self.order.external_payment_id, "cs_test_123")
+        self.assertEqual(self.product.stock, 4)
+
+
 class PayPalCaptureSecurityTests(TestCase):
     """PayPal has no signature-verified webhook in this integration — instead,
     payment is confirmed by a fresh server-to-server capture call made when

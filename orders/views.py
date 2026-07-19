@@ -170,6 +170,26 @@ def order_success(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     if order.user_id != request.user.id and not request.user.is_staff:
         raise PermissionDenied
+
+    if (
+        order.status == Order.Status.PENDING
+        and order.payment_provider == Order.PaymentProvider.PAYMONGO
+        and order.external_session_id
+    ):
+        try:
+            session = paymongo_client.get_checkout_session(order.external_session_id)
+        except paymongo_client.PayMongoError:
+            logger.info("Could not reconcile PayMongo order %s on success page.", order.id)
+        else:
+            session_attrs = session.get("attributes", {})
+            payment_intent = session_attrs.get("payment_intent", {})
+            payments = session_attrs.get("payments", [])
+            payment_status = payment_intent.get("status", "")
+            linked_payment_status = next((payment.get("attributes", {}).get("status", "") for payment in payments), "")
+
+            if payment_status == "succeeded" or linked_payment_status == "paid":
+                _mark_order_paid(order, external_payment_id=session.get("id", order.external_session_id))
+
     return render(request, "orders/order_success.html", {"order": order})
 
 
