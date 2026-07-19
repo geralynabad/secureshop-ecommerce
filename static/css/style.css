@@ -477,7 +477,6 @@ a:hover { text-decoration: underline; }
     box-shadow: var(--shadow-sm);
     z-index: 3;
 }
-.gallery-prev { left: 0.75rem; }
 .gallery-next { right: 0.75rem; }
 .gallery-thumbs {
     display: flex;

@@ -5,7 +5,6 @@
     <div class="product-media">
         {% if hero_image and not hero_image.placeholder %}
             <div class="gallery-shell" data-product-gallery>
-                <button class="gallery-nav gallery-prev" type="button" aria-label="Previous image" data-gallery-prev>&lsaquo;</button>
                 <div class="gallery-viewport">
                     <div class="gallery-track" data-gallery-track>
                         {% for image in gallery_items %}
@@ -111,7 +110,6 @@
         const track = document.querySelector("[data-gallery-track]");
         const slides = Array.from(document.querySelectorAll("[data-gallery-slide]"));
         const thumbButtons = Array.from(document.querySelectorAll("[data-gallery-thumb]"));
-        const prevButton = document.querySelector("[data-gallery-prev]");
         const nextButton = document.querySelector("[data-gallery-next]");
         const variantButtons = Array.from(document.querySelectorAll("[data-variant-button]"));
         const variantCopy = document.querySelector("[data-variant-copy]");
@@ -133,10 +131,6 @@
 
             thumbButtons.forEach((button, index) => {
                 button.addEventListener("click", () => setActiveSlide(index));
-            });
-
-            prevButton?.addEventListener("click", () => {
-                setActiveSlide((currentIndex - 1 + slides.length) % slides.length);
             });
 
             nextButton?.addEventListener("click", () => {
