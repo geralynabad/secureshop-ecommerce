@@ -561,6 +561,31 @@ a:hover { text-decoration: underline; }
 .cart-table th, .cart-table td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); text-align: left; font-size: 0.92rem; }
 .cart-table th { font-family: var(--font-body); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); background: var(--paper); }
 .cart-table tr:last-child td { border-bottom: none; }
+.cart-product-block { display: flex; gap: 0.9rem; align-items: flex-start; }
+.cart-product-image {
+    width: 74px;
+    height: 74px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--paper);
+    border: 1px solid var(--border);
+}
+.cart-product-image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+.cart-product-copy { min-width: 0; }
+.cart-product-name { font-weight: 700; color: var(--ink); margin-bottom: 0.15rem; }
+.cart-product-description {
+    margin-top: 0.35rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
 .cart-total { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; margin: 1.2rem 0; }
 .line-variation { color: var(--muted); font-size: 0.82rem; }
 .voucher-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.35rem; }
@@ -617,6 +642,16 @@ a:hover { text-decoration: underline; }
 @media (max-width: 860px) {
     .checkout-layout { grid-template-columns: 1fr; }
     .shipping-panel { position: static; }
+}
+
+@media (max-width: 720px) {
+    .cart-table, .cart-table tbody, .cart-table tr, .cart-table td, .cart-table th { display: block; width: 100%; }
+    .cart-table thead { display: none; }
+    .cart-table tr { border-bottom: 1px solid var(--border); }
+    .cart-table td { border-bottom: none; padding: 0.75rem 1rem; }
+    .cart-table td:last-child { padding-bottom: 1rem; }
+    .cart-product-block { align-items: center; }
+    .cart-product-image { width: 64px; height: 64px; }
 }
 
 /* ==========================================================================

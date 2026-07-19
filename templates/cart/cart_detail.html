@@ -23,8 +23,18 @@
         {% for item in cart %}
         <tr data-product-id="{{ item.product.id }}">
             <td>
-                {{ item.product.name }}
-                {% if item.variation %}<div class="line-variation">Option: {{ item.variation }}</div>{% endif %}
+                <div class="cart-product-block">
+                    {% if item.selected_image_url %}
+                        <img src="{{ item.selected_image_url }}" alt="{{ item.product.name }}" class="cart-product-image">
+                    {% else %}
+                        <div class="cart-product-image cart-product-image-placeholder">No image</div>
+                    {% endif %}
+                    <div class="cart-product-copy">
+                        <div class="cart-product-name">{{ item.product.name }}</div>
+                        {% if item.variation %}<div class="line-variation">Variation: {{ item.variation }}</div>{% endif %}
+                        <div class="cart-product-description">{{ item.selected_description }}</div>
+                    </div>
+                </div>
             </td>
             <td>₱{{ item.price }}</td>
             <td>{{ item.quantity }}</td>

@@ -84,6 +84,21 @@ class Cart:
             voucher_code = item.get("voucher_code", "")
             line_subtotal = product.price * quantity
 
+            selected_variant = None
+            selected_description = product.description
+            selected_image_url = product.image.url if product.image else ""
+
+            if variation:
+                selected_variant = next(
+                    (variant for variant in product.get_active_variants() if variant.name == variation),
+                    None,
+                )
+                if selected_variant:
+                    if selected_variant.brief_description:
+                        selected_description = selected_variant.brief_description
+                    if selected_variant.image:
+                        selected_image_url = selected_variant.image.url
+
             discount = Decimal("0.00")
             voucher_error = None
             if voucher_code:
@@ -95,6 +110,8 @@ class Cart:
                 "product": product,
                 "quantity": quantity,
                 "variation": variation,
+                "selected_description": selected_description,
+                "selected_image_url": selected_image_url,
                 "price": product.price,
                 "voucher_code": voucher_code,
                 "voucher_error": voucher_error,
