@@ -203,9 +203,9 @@ class Command(BaseCommand):
                     variant.save(update_fields=["image"])
 
         gallery_specs = {
-            "Wireless Mouse": ["Front angle", "Side angle", "Grip detail"],
-            "Cotton Crew T-Shirt": ["Front view", "Folded view", "Fabric close-up"],
-            "Bluetooth Earbuds": ["Case front", "Earbud profile", "Charging angle"],
+            "Wireless Mouse": ["Angle 1", "Angle 2", "Detail 1"],
+            "Cotton Crew T-Shirt": ["Angle 1", "Angle 2", "Detail 1"],
+            "Bluetooth Earbuds": ["Angle 1", "Angle 2", "Detail 1"],
         }
 
         for product_name, labels in gallery_specs.items():

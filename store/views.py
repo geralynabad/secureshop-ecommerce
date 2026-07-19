@@ -101,15 +101,15 @@ def product_detail(request, slug):
 
     if not gallery_items and product.image:
         gallery_items = [
-            {"url": product.image.url, "alt": f"{product.name} front view", "placeholder": False},
-            {"url": product.image.url, "alt": f"{product.name} angle view", "placeholder": False},
-            {"url": product.image.url, "alt": f"{product.name} detail view", "placeholder": False},
+            {"url": product.image.url, "alt": f"{product.name} image 1", "placeholder": False},
+            {"url": product.image.url, "alt": f"{product.name} image 2", "placeholder": False},
+            {"url": product.image.url, "alt": f"{product.name} image 3", "placeholder": False},
         ]
     elif not gallery_items:
         gallery_items = [
-            {"placeholder": True, "label": "Front angle"},
-            {"placeholder": True, "label": "Side angle"},
-            {"placeholder": True, "label": "Detail angle"},
+            {"placeholder": True},
+            {"placeholder": True},
+            {"placeholder": True},
         ]
 
     if not hero_image:

@@ -440,17 +440,24 @@ a:hover { text-decoration: underline; }
     border: 1px solid rgba(255, 255, 255, 0.28);
     background:
         linear-gradient(135deg, rgba(15, 91, 82, 0.96), rgba(194, 139, 75, 0.9));
-    color: #fff;
     display: flex;
     align-items: end;
     padding: 1rem;
-    font-family: var(--font-display);
-    font-size: 1.05rem;
-    letter-spacing: -0.01em;
     min-height: 120px;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    position: relative;
+    overflow: hidden;
 }
-.placeholder-card span { background: rgba(255, 255, 255, 0.18); padding: 0.35rem 0.65rem; border-radius: 999px; }
+.placeholder-card::before {
+    content: "";
+    position: absolute;
+    inset: 14%;
+    border-radius: calc(var(--radius-lg) - 6px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background:
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2), transparent 28%),
+        radial-gradient(circle at 70% 65%, rgba(255, 255, 255, 0.12), transparent 32%);
+}
 .placeholder-card-large { grid-area: large; min-height: 240px; }
 .placeholder-card-medium { grid-area: medium; }
 .placeholder-card-small { grid-area: small; }
