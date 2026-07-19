@@ -5,6 +5,8 @@ Security controls implemented here are mapped to OWASP Top 10 (2021) in README.m
 """
 
 from pathlib import Path
+
+from cryptography.fernet import Fernet
 from decouple import config, Csv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,7 +21,7 @@ SECRET_KEY = config("SECRET_KEY", default="dev-only-insecure-key-change-me")
 # shipping fields) — see ecommerce/encryption.py for why this is encryption
 # (reversible) rather than hashing (one-way, used only for passwords).
 FIELD_ENCRYPTION_KEY = config(
-    "FIELD_ENCRYPTION_KEY", default="YZbLOmookh6284ZfHtO3AXYjBIjXJMbSFTT72gXEF14="
+    "FIELD_ENCRYPTION_KEY", default=Fernet.generate_key().decode()
 )
 DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=Csv())
