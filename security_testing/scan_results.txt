@@ -1,0 +1,20 @@
+[PASS] Headers — Content-Security-Policy present — default-src 'self'; script-src 'self' https://js.stripe.com; frame-src https://j
+[PASS] Headers — X-Frame-Options DENY (clickjacking) 
+[PASS] Headers — X-Content-Type-Options nosniff 
+[PASS] Headers — Referrer-Policy set — same-origin
+[FAIL] Headers — No verbose Server/framework version banner — Server: WSGIServer/0.2 CPython/3.12.3
+[PASS] Cookies — sessionid has SameSite attribute — Lax
+[PASS] CSRF — POST without CSRF token rejected (403) — got 403
+[PASS] XSS — Reflected search query is HTML-escaped 
+[PASS] SQL Injection — All classic injection payloads handled as literal search text (no 500s, no DB errors) 
+[PASS] SQL Injection — Product table intact after DROP TABLE payload (app still serving products) 
+[PASS] Open Redirect — Login page does not auto-redirect to external host via 'next' 
+[PASS] Authentication — Identical generic error for bad username vs bad password (no user enumeration) 
+[PASS] Authentication — Account locks out after repeated failed attempts 
+[PASS] Access Control — Unauthenticated request to /admin/ redirected (not 200) 
+[PASS] Access Control — Unauthenticated request to /orders/checkout/ redirected to login 
+[PASS] Access Control — Nonexistent/foreign order id does not leak data (redirect or 404, not 200) 
+[PASS] Info Disclosure — Unknown product slug returns clean 404 (no stack trace) 
+
+--- Summary ---
+16/17 checks passed

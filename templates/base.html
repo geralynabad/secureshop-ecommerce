@@ -1,0 +1,114 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SecureShop{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <header class="site-header">
+        <nav class="nav-container">
+            <a href="{% url 'store:product_list' %}" class="brand">Secure<em>Shop</em></a>
+            <form action="{% url 'store:product_list' %}" method="get" class="search-form">
+                <svg class="search-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.6"/>
+                    <path d="M14 14L18 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+                <input type="text" name="q" placeholder="Search products..." value="{{ query|default:'' }}" maxlength="100">
+                <button type="submit">Search</button>
+            </form>
+            <div class="nav-links">
+                <a href="{% url 'cart:cart_detail' %}" class="cart-link">
+                    Cart
+                    <span class="cart-badge" data-cart-count>{{ cart|length }}</span>
+                </a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'orders:order_history' %}">My Orders</a>
+                    <span class="nav-user"><a href="{% url 'accounts:profile' %}">Hi, {{ user.username }}</a></span>
+                    <form action="{% url 'accounts:logout' %}" method="post" class="inline-form">
+                        {% csrf_token %}
+                        <button type="submit" class="link-button">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}">Login</a>
+                    <a href="{% url 'accounts:register' %}" class="nav-cta">Register</a>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li class="message {{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <p>&copy; {% now "Y" %} SecureShop &mdash; built with Django security best practices.</p>
+    </footer>
+
+    <div class="toast-container" id="toast-container" aria-live="polite"></div>
+    <script>
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            return match ? decodeURIComponent(match[2]) : null;
+        }
+
+        function showToast(message, type = "success") {
+            const container = document.getElementById("toast-container");
+            const toast = document.createElement("div");
+            toast.className = `toast toast-${type}`;
+            const icon = type === "success"
+                ? '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.4"/><path d="M6 10.2l2.4 2.4L14.2 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                : '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.4"/><path d="M10 6v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="13.5" r="0.9" fill="currentColor"/></svg>';
+            toast.innerHTML = `<span class="toast-icon">${icon}</span><span class="toast-message"></span>`;
+            toast.querySelector(".toast-message").textContent = message;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add("toast-visible"));
+            setTimeout(() => {
+                toast.classList.remove("toast-visible");
+                setTimeout(() => toast.remove(), 250);
+            }, 3000);
+        }
+
+        function updateCartBadge(count) {
+            document.querySelectorAll("[data-cart-count]").forEach(el => { el.textContent = count; });
+        }
+
+        // Progressive enhancement: any form with data-ajax-cart submits via
+        // fetch and shows a toast instead of a full page reload. If JS is
+        // disabled, these forms still work as plain POSTs (view handles both).
+        document.addEventListener("submit", function (e) {
+            const form = e.target;
+            if (!form.matches("[data-ajax-cart]")) return;
+            e.preventDefault();
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: "POST",
+                body: formData,
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+            })
+                .then(res => res.json())
+                .then(data => {
+                    showToast(data.message, data.success ? "success" : "error");
+                    if (data.success && typeof data.cart_count !== "undefined") {
+                        updateCartBadge(data.cart_count);
+                    }
+                })
+                .catch(() => showToast("Something went wrong. Please try again.", "error"));
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

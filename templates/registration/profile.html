@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="form-card profile-card">
+    <h1>My Profile</h1>
+
+    <div class="profile-header">
+        {% if user.avatar %}
+            <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="avatar-img">
+        {% else %}
+            <div class="avatar-placeholder">{{ user.username|first|upper }}</div>
+        {% endif %}
+        <div>
+            <p class="profile-username">{{ user.username }}</p>
+            <p class="profile-email">{{ user.email }}</p>
+        </div>
+    </div>
+
+    <dl class="profile-details">
+        <dt>Phone</dt><dd>{{ user.phone_number|default:"—" }}</dd>
+        <dt>Address</dt><dd>{{ user.address|default:"—" }}</dd>
+        <dt>Gender</dt><dd>{{ user.get_gender_display|default:"—" }}</dd>
+        <dt>Birthday</dt><dd>{{ user.birthday|date:"F j, Y"|default:"—" }}</dd>
+    </dl>
+
+    <div class="profile-actions">
+        <a href="{% url 'accounts:edit_profile' %}" class="btn-primary">Edit profile</a>
+        <a href="{% url 'accounts:password_change' %}">Change password</a>
+    </div>
+    <p class="hint"><a href="{% url 'orders:order_history' %}">View my orders</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}My Orders{% endblock %}
+{% block content %}
+<h1>My Orders</h1>
+
+<nav class="order-tabs">
+    <a href="?tab=all" class="order-tab {% if active_tab == 'all' %}active{% endif %}">Purchase History</a>
+    <a href="?tab=to_ship" class="order-tab {% if active_tab == 'to_ship' %}active{% endif %}">To Ship</a>
+    <a href="?tab=to_receive" class="order-tab {% if active_tab == 'to_receive' %}active{% endif %}">To Receive</a>
+    <a href="?tab=to_rate" class="order-tab {% if active_tab == 'to_rate' %}active{% endif %}">To Rate</a>
+</nav>
+
+{% if orders %}
+    {% for order in orders %}
+    <div class="order-card">
+        <div class="order-card-header">
+            <h3>Order #{{ order.id }}</h3>
+            <span class="order-status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+        </div>
+        <p class="hint">{{ order.created_at|date:"M d, Y H:i" }}</p>
+        {% for item in order.items.all %}
+            <div class="order-item-row">
+                <span>{{ item.product.name }} &times; {{ item.quantity }}</span>
+                <span>₱{{ item.get_cost }}</span>
+            </div>
+        {% endfor %}
+        <p class="cart-total">Total: ₱{{ order.get_total_cost }}</p>
+
+        {% if order.status == "pending" %}
+            <div class="order-card-actions">
+                <form method="post" action="{% url 'orders:continue_to_pay' order.id %}" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-primary">Continue to Pay</button>
+                </form>
+                <form method="post" action="{% url 'orders:cancel_order' order.id %}" class="inline-form"
+                      onsubmit="return confirm('Cancel this order? This can\'t be undone.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-secondary">Cancel Order</button>
+                </form>
+            </div>
+        {% elif order.status == "shipped" %}
+            <div class="order-card-actions">
+                <form method="post" action="{% url 'orders:mark_received' order.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-primary">Order Received</button>
+                </form>
+            </div>
+        {% elif order.status == "delivered" %}
+            <div class="order-card-actions">
+                <a href="{% url 'orders:rate_order' order.id %}" class="btn-primary">Rate this order</a>
+            </div>
+        {% elif order.status == "completed" and order.rating %}
+            <p class="hint">You rated this order {{ order.rating }}/5{% if order.rating_comment %} — "{{ order.rating_comment }}"{% endif %}</p>
+        {% elif order.status == "refunded" %}
+            <p class="hint">Refunded {{ order.refunded_at|date:"M d, Y" }}{% if order.refund_reason %} — "{{ order.refund_reason }}"{% endif %}</p>
+        {% elif order.status == "cancelled" %}
+            <p class="hint">Cancelled {{ order.cancelled_at|date:"M d, Y" }}</p>
+        {% endif %}
+
+        {% if order.status in refundable_statuses %}
+            <div class="order-card-actions">
+                <form method="post" action="{% url 'orders:request_refund' order.id %}" class="refund-form"
+                      onsubmit="return confirm('Request a full refund for this order?');">
+                    {% csrf_token %}
+                    <input type="text" name="reason" placeholder="Reason (optional)" maxlength="255">
+                    <button type="submit" class="btn-secondary">Request Refund</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <p>No orders here yet.</p>
+        <a href="{% url 'store:product_list' %}">Continue shopping</a>
+    </div>
+{% endif %}
+{% endblock %}

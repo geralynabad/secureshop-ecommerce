@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+<div class="product-detail">
+    {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="detail-img">
+    {% else %}
+        <div class="img-placeholder detail-img" style="aspect-ratio: 1/1; display:flex; align-items:center; justify-content:center;">No image</div>
+    {% endif %}
+    <div class="detail-info">
+        <h1>{{ product.name }}</h1>
+        <span class="price">₱{{ product.price }}</span>
+        <p>{{ product.description|linebreaks }}</p>
+        <p class="stock {% if not product.in_stock %}out{% endif %}">
+            {% if product.in_stock %}{{ product.stock }} in stock{% else %}Out of stock{% endif %}
+        </p>
+
+        {% if product.in_stock %}
+        <form action="{% url 'cart:cart_add' product.id %}" method="post" class="add-to-cart-form" data-ajax-cart>
+            {% csrf_token %}
+            {% with variations=product.get_variation_list %}
+                {% if variations %}
+                <div class="field">
+                    <label for="variation">Option</label>
+                    <select id="variation" name="variation" required>
+                        <option value="" disabled selected>Choose an option&hellip;</option>
+                        {% for option in variations %}
+                            <option value="{{ option }}">{{ option }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+            {% endwith %}
+            <div class="field">
+                <label for="qty">Quantity</label>
+                <input type="number" id="qty" name="quantity" value="1" min="1" max="{{ product.stock }}" class="qty-input">
+            </div>
+            <button type="submit" class="btn-primary">Add to cart</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

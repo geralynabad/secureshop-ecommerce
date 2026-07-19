@@ -1,0 +1,40 @@
+databases:
+  - name: secureshop-db
+    plan: free
+    databaseName: secureshop
+    user: secureshop
+
+services:
+  - type: web
+    plan: free
+    name: secureshop
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn ecommerce.wsgi:application"
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: secureshop-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      # These have no default — Render will prompt for each one when you
+      # apply this blueprint (or you can fill them in afterward under the
+      # service's Environment tab). See .env.example for where to get each.
+      - key: FIELD_ENCRYPTION_KEY
+        sync: false
+      - key: PAYMONGO_PUBLIC_KEY
+        sync: false
+      - key: PAYMONGO_SECRET_KEY
+        sync: false
+      - key: PAYMONGO_WEBHOOK_SECRET
+        sync: false
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_MODE
+        value: sandbox

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Rate Order #{{ order.id }}{% endblock %}
+{% block content %}
+<div class="form-card">
+    <h1>Rate Order #{{ order.id }}</h1>
+    <ul class="hint">
+        {% for item in order.items.all %}
+            <li>{{ item.product.name }} &times; {{ item.quantity }}</li>
+        {% endfor %}
+    </ul>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="field">
+            <label>Your rating</label>
+            <div class="star-rating">
+                {% for radio in form.rating %}
+                    {{ radio.tag }}
+                    <label for="{{ radio.id_for_label }}">&#9733;</label>
+                {% endfor %}
+            </div>
+            {{ form.rating.errors }}
+        </div>
+
+        <div class="field">
+            {{ form.rating_comment.label_tag }}
+            {{ form.rating_comment }}
+            {{ form.rating_comment.errors }}
+        </div>
+
+        <button type="submit" class="btn-primary">Submit rating</button>
+        <a href="{% url 'orders:order_history' %}" class="cancel-link">Cancel</a>
+    </form>
+</div>
+{% endblock %}

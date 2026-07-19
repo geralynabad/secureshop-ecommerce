@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Your Cart{% endblock %}
+{% block content %}
+<h1>Your Cart</h1>
+
+{% if cart|length == 0 %}
+    <div class="empty-state">
+        <p>Your cart is empty.</p>
+        <a href="{% url 'store:product_list' %}">Continue shopping</a>
+    </div>
+{% else %}
+<table class="cart-table">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Subtotal</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in cart %}
+        <tr data-product-id="{{ item.product.id }}">
+            <td>
+                {{ item.product.name }}
+                {% if item.variation %}<div class="line-variation">Option: {{ item.variation }}</div>{% endif %}
+            </td>
+            <td>₱{{ item.price }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>
+                {% if item.discount %}
+                    <span class="price-discounted">₱{{ item.total_price }}</span>₱<span data-final-price>{{ item.final_price }}</span>
+                {% else %}
+                    ₱<span data-final-price>{{ item.total_price }}</span>
+                {% endif %}
+                <div class="voucher-row">
+                    <input type="text" placeholder="Voucher code" value="{{ item.voucher_code }}" data-voucher-input maxlength="50">
+                    <button type="button" data-apply-voucher data-product-id="{{ item.product.id }}">Apply</button>
+                </div>
+                <div class="voucher-message {% if item.voucher_error %}error{% elif item.voucher_code %}success{% endif %}" data-voucher-message>
+                    {% if item.voucher_error %}{{ item.voucher_error }}{% elif item.discount %}Voucher applied: &minus;₱{{ item.discount }}{% endif %}
+                </div>
+            </td>
+            <td>
+                <form action="{% url 'cart:cart_remove' item.product.id %}" method="post" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="link-button">Remove</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p class="cart-total">Total: ₱<span data-cart-grand-total>{{ cart.get_total_price }}</span></p>
+<a href="{% url 'orders:checkout' %}" class="btn-primary">Proceed to checkout</a>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll("[data-apply-voucher]").forEach(function (button) {
+    button.addEventListener("click", function () {
+        const productId = button.dataset.productId;
+        const row = button.closest("tr");
+        const input = row.querySelector("[data-voucher-input]");
+        const messageEl = row.querySelector("[data-voucher-message]");
+        const priceEl = row.querySelector("[data-final-price]");
+
+        const formData = new FormData();
+        formData.append("code", input.value);
+        formData.append("csrfmiddlewaretoken", getCookie("csrftoken"));
+
+        fetch(`/cart/voucher/${productId}/`, {
+            method: "POST", body: formData,
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+        })
+            .then(res => res.json())
+            .then(data => {
+                messageEl.textContent = data.message;
+                messageEl.className = "voucher-message " + (data.success ? "success" : "error");
+                if (data.success) {
+                    priceEl.textContent = data.final_price;
+                    document.querySelector("[data-cart-grand-total]").textContent = data.cart_total;
+                    showToast(data.message, "success");
+                } else {
+                    showToast(data.message, "error");
+                }
+            })
+            .catch(() => showToast("Couldn't apply voucher. Please try again.", "error"));
+    });
+});
+</script>
+{% endblock %}

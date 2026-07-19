@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Order Confirmed{% endblock %}
+{% block content %}
+<div class="form-card">
+    <h1>Thank you, {{ order.full_name }}!</h1>
+    <p>Order #{{ order.id }} status: <strong>{{ order.get_status_display }}</strong></p>
+    <p>We'll email a receipt to {{ order.user.email }} once payment is confirmed.</p>
+    <p><small>Payment status is confirmed server-to-server by the payment provider, not by this page alone.</small></p>
+    <a href="{% url 'store:product_list' %}">Continue shopping</a>
+</div>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Checkout{% endblock %}
+{% block content %}
+<h1>Checkout</h1>
+<form method="post" novalidate id="checkout-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="checkout-layout">
+        <div class="checkout-items">
+            {% for item in cart %}
+            <div class="checkout-item-card" data-item-card data-final-price="{{ item.final_price }}">
+                <label class="custom-checkbox">
+                    <input type="checkbox" name="selected_products" value="{{ item.product.id }}" checked data-item-checkbox>
+                    <span class="box">
+                        <svg viewBox="0 0 20 20" fill="none"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                </label>
+
+                {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="item-thumb">
+                {% else %}
+                    <div class="item-thumb-placeholder">No image</div>
+                {% endif %}
+
+                <div class="item-details">
+                    <h3>{{ item.product.name }}</h3>
+                    {% if item.product.description %}<p class="item-desc">{{ item.product.description }}</p>{% endif %}
+                    <div class="item-meta">
+                        {% if item.variation %}<span>Option: {{ item.variation }}</span>{% endif %}
+                        <span>Qty: {{ item.quantity }}</span>
+                        <span>Unit: ₱{{ item.price }}</span>
+                    </div>
+                    <div class="voucher-row">
+                        <input type="text" placeholder="Voucher code" value="{{ item.voucher_code }}" data-voucher-input maxlength="50">
+                        <button type="button" data-apply-voucher data-product-id="{{ item.product.id }}">Apply</button>
+                    </div>
+                    <div class="voucher-message {% if item.voucher_error %}error{% elif item.voucher_code %}success{% endif %}" data-voucher-message>
+                        {% if item.voucher_error %}{{ item.voucher_error }}{% elif item.discount %}Voucher applied: &minus;₱{{ item.discount }}{% endif %}
+                    </div>
+                </div>
+
+                <div class="item-price-block">
+                    {% if item.discount %}<div class="price-discounted">₱{{ item.total_price }}</div>{% endif %}
+                    <div class="item-line-total">₱<span data-line-total>{{ item.final_price }}</span></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="shipping-panel">
+            <h2>Shipping details</h2>
+            {% for field in form %}
+                {% if field.name != "payment_method" %}
+                <div class="field">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+                {% endif %}
+            {% endfor %}
+
+            <div class="order-summary-lines">
+                <div class="row"><span>Subtotal (<span data-selected-count>{{ cart|length }}</span> item{{ cart|length|pluralize }})</span><span>₱<span data-summary-subtotal>{{ cart.get_total_price }}</span></span></div>
+                <div class="row total"><span>Total</span><span>₱<span data-summary-total>{{ cart.get_total_price }}</span></span></div>
+            </div>
+
+            <div class="field">
+                {{ form.payment_method.label_tag }}
+                {{ form.payment_method }}
+                {{ form.payment_method.errors }}
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%;">Continue to payment</button>
+            <p class="hint">GCash and Maya are handled by PayMongo's secure hosted page; PayPal payments happen on PayPal's own site. This site never sees or stores your payment credentials either way.</p>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function recomputeSummary() {
+    let total = 0, count = 0;
+    document.querySelectorAll("[data-item-card]").forEach(function (card) {
+        const checkbox = card.querySelector("[data-item-checkbox]");
+        if (checkbox.checked) {
+            total += parseFloat(card.dataset.finalPrice);
+            count += 1;
+        }
+    });
+    document.querySelector("[data-summary-subtotal]").textContent = total.toFixed(2);
+    document.querySelector("[data-summary-total]").textContent = total.toFixed(2);
+    document.querySelector("[data-selected-count]").textContent = count;
+}
+
+document.querySelectorAll("[data-item-checkbox]").forEach(function (checkbox) {
+    checkbox.addEventListener("change", recomputeSummary);
+});
+
+document.querySelectorAll("[data-apply-voucher]").forEach(function (button) {
+    button.addEventListener("click", function () {
+        const productId = button.dataset.productId;
+        const card = button.closest("[data-item-card]");
+        const input = card.querySelector("[data-voucher-input]");
+        const messageEl = card.querySelector("[data-voucher-message]");
+        const lineTotalEl = card.querySelector("[data-line-total]");
+
+        const formData = new FormData();
+        formData.append("code", input.value);
+        formData.append("csrfmiddlewaretoken", getCookie("csrftoken"));
+
+        fetch(`/cart/voucher/${productId}/`, {
+            method: "POST", body: formData,
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+        })
+            .then(res => res.json())
+            .then(data => {
+                messageEl.textContent = data.message;
+                messageEl.className = "voucher-message " + (data.success ? "success" : "error");
+                if (data.success) {
+                    lineTotalEl.textContent = data.final_price;
+                    card.dataset.finalPrice = data.final_price;
+                    recomputeSummary();
+                    showToast(data.message, "success");
+                } else {
+                    showToast(data.message, "error");
+                }
+            })
+            .catch(() => showToast("Couldn't apply voucher. Please try again.", "error"));
+    });
+});
+
+recomputeSummary();
+</script>
+{% endblock %}
