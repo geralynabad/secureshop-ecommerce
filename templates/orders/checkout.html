@@ -1,135 +1,80 @@
 {% extends "base.html" %}
-{% block title %}Checkout{% endblock %}
+{% block title %}My Orders{% endblock %}
 {% block content %}
-<h1>Checkout</h1>
-<form method="post" novalidate id="checkout-form">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    <div class="checkout-layout">
-        <div class="checkout-items">
-            {% for item in cart %}
-            <div class="checkout-item-card" data-item-card data-final-price="{{ item.final_price }}">
-                <label class="custom-checkbox">
-                    <input type="checkbox" name="selected_products" value="{{ item.product.id }}" checked data-item-checkbox>
-                    <span class="box">
-                        <svg viewBox="0 0 20 20" fill="none"><path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </span>
-                </label>
+<h1>My Orders</h1>
 
-                {% if item.product.image %}
-                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="item-thumb">
-                {% else %}
-                    <div class="item-thumb-placeholder">No image</div>
-                {% endif %}
+<nav class="order-tabs">
+    <a href="?tab=all" class="order-tab {% if active_tab == 'all' %}active{% endif %}">Purchase History</a>
+    <a href="?tab=to_ship" class="order-tab {% if active_tab == 'to_ship' %}active{% endif %}">To Ship</a>
+    <a href="?tab=to_receive" class="order-tab {% if active_tab == 'to_receive' %}active{% endif %}">To Receive</a>
+    <a href="?tab=to_rate" class="order-tab {% if active_tab == 'to_rate' %}active{% endif %}">To Rate</a>
+</nav>
 
-                <div class="item-details">
-                    <h3>{{ item.product.name }}</h3>
-                    {% if item.product.description %}<p class="item-desc">{{ item.product.description }}</p>{% endif %}
-                    <div class="item-meta">
-                        {% if item.variation %}<span>Option: {{ item.variation }}</span>{% endif %}
-                        <span>Qty: {{ item.quantity }}</span>
-                        <span>Unit: ₱{{ item.price }}</span>
-                    </div>
-                    <div class="voucher-row">
-                        <input type="text" placeholder="Voucher code" value="{{ item.voucher_code }}" data-voucher-input maxlength="50">
-                        <button type="button" data-apply-voucher data-product-id="{{ item.product.id }}">Apply</button>
-                    </div>
-                    <div class="voucher-message {% if item.voucher_error %}error{% elif item.voucher_code %}success{% endif %}" data-voucher-message>
-                        {% if item.voucher_error %}{{ item.voucher_error }}{% elif item.discount %}Voucher applied: &minus;₱{{ item.discount }}{% endif %}
-                    </div>
-                </div>
-
-                <div class="item-price-block">
-                    {% if item.discount %}<div class="price-discounted">₱{{ item.total_price }}</div>{% endif %}
-                    <div class="item-line-total">₱<span data-line-total>{{ item.final_price }}</span></div>
-                </div>
-            </div>
-            {% endfor %}
+{% if orders %}
+    {% for order in orders %}
+    <div class="order-card">
+        <div class="order-card-header">
+            <h3>Order #{{ order.id }}</h3>
+            <span class="order-status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
         </div>
-
-        <div class="shipping-panel">
-            <h2>Shipping details</h2>
-            {% for field in form %}
-                {% if field.name != "payment_method" %}
-                <div class="field">
-                    {{ field.label_tag }}
-                    {{ field }}
-                    {{ field.errors }}
-                </div>
-                {% endif %}
-            {% endfor %}
-
-            <div class="order-summary-lines">
-                <div class="row"><span>Subtotal (<span data-selected-count>{{ cart|length }}</span> item{{ cart|length|pluralize }})</span><span>₱<span data-summary-subtotal>{{ cart.get_total_price }}</span></span></div>
-                <div class="row total"><span>Total</span><span>₱<span data-summary-total>{{ cart.get_total_price }}</span></span></div>
+        <p class="hint">{{ order.created_at|date:"M d, Y H:i" }}</p>
+        {% for item in order.items.all %}
+            <div class="order-item-row">
+                <span>{{ item.product.name }} &times; {{ item.quantity }}</span>
+                <span>₱{{ item.get_cost }}</span>
             </div>
+        {% endfor %}
+        <p class="cart-total">Total: ₱{{ order.get_total_cost }}</p>
 
-            <div class="field">
-                {{ form.payment_method.label_tag }}
-                {{ form.payment_method }}
-                {{ form.payment_method.errors }}
+        {% if order.status == "pending" %}
+            <div class="order-card-actions">
+                <form method="post" action="{% url 'orders:continue_to_pay' order.id %}" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-primary">Continue to Pay</button>
+                </form>
+                <form method="post" action="{% url 'orders:cancel_order' order.id %}" class="inline-form"
+                      onsubmit="return confirm('Cancel this order? This can\'t be undone.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-secondary">Cancel Order</button>
+                </form>
             </div>
+        {% elif order.status == "paid" %}
+            <p class="hint">Order placed! We'll notify you once it ships.</p>
+        {% elif order.status == "shipped" %}
+            <div class="order-card-actions">
+                <form method="post" action="{% url 'orders:mark_received' order.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-primary">Order Received</button>
+                </form>
+            </div>
+        {% elif order.status == "delivered" %}
+            <div class="order-card-actions">
+                <a href="{% url 'orders:rate_order' order.id %}" class="btn-primary">Rate this order</a>
+            </div>
+        {% elif order.status == "completed" and order.rating %}
+            <p class="hint">You rated this order {{ order.rating }}/5{% if order.rating_comment %} — "{{ order.rating_comment }}"{% endif %}</p>
+        {% elif order.status == "refunded" %}
+            <p class="hint">Refunded {{ order.refunded_at|date:"M d, Y" }}{% if order.refund_reason %} — "{{ order.refund_reason }}"{% endif %}</p>
+        {% elif order.status == "cancelled" %}
+            <p class="hint">Cancelled {{ order.cancelled_at|date:"M d, Y" }}</p>
+        {% endif %}
 
-            <button type="submit" class="btn-primary" style="width: 100%;">Continue to payment</button>
-            <p class="hint">GCash and Maya are handled by PayMongo's secure hosted page; PayPal payments happen on PayPal's own site. This site never sees or stores your payment credentials either way.</p>
-        </div>
+        {% if order.status in refundable_statuses %}
+            <div class="order-card-actions">
+                <form method="post" action="{% url 'orders:request_refund' order.id %}" class="refund-form"
+                      onsubmit="return confirm('Request a full refund for this order?');">
+                    {% csrf_token %}
+                    <input type="text" name="reason" placeholder="Reason (optional)" maxlength="255">
+                    <button type="submit" class="btn-secondary">Request Refund</button>
+                </form>
+            </div>
+        {% endif %}
     </div>
-</form>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-function recomputeSummary() {
-    let total = 0, count = 0;
-    document.querySelectorAll("[data-item-card]").forEach(function (card) {
-        const checkbox = card.querySelector("[data-item-checkbox]");
-        if (checkbox.checked) {
-            total += parseFloat(card.dataset.finalPrice);
-            count += 1;
-        }
-    });
-    document.querySelector("[data-summary-subtotal]").textContent = total.toFixed(2);
-    document.querySelector("[data-summary-total]").textContent = total.toFixed(2);
-    document.querySelector("[data-selected-count]").textContent = count;
-}
-
-document.querySelectorAll("[data-item-checkbox]").forEach(function (checkbox) {
-    checkbox.addEventListener("change", recomputeSummary);
-});
-
-document.querySelectorAll("[data-apply-voucher]").forEach(function (button) {
-    button.addEventListener("click", function () {
-        const productId = button.dataset.productId;
-        const card = button.closest("[data-item-card]");
-        const input = card.querySelector("[data-voucher-input]");
-        const messageEl = card.querySelector("[data-voucher-message]");
-        const lineTotalEl = card.querySelector("[data-line-total]");
-
-        const formData = new FormData();
-        formData.append("code", input.value);
-        formData.append("csrfmiddlewaretoken", getCookie("csrftoken"));
-
-        fetch(`/cart/voucher/${productId}/`, {
-            method: "POST", body: formData,
-            headers: { "X-Requested-With": "XMLHttpRequest" },
-        })
-            .then(res => res.json())
-            .then(data => {
-                messageEl.textContent = data.message;
-                messageEl.className = "voucher-message " + (data.success ? "success" : "error");
-                if (data.success) {
-                    lineTotalEl.textContent = data.final_price;
-                    card.dataset.finalPrice = data.final_price;
-                    recomputeSummary();
-                    showToast(data.message, "success");
-                } else {
-                    showToast(data.message, "error");
-                }
-            })
-            .catch(() => showToast("Couldn't apply voucher. Please try again.", "error"));
-    });
-});
-
-recomputeSummary();
-</script>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <p>No orders here yet.</p>
+        <a href="{% url 'store:product_list' %}">Continue shopping</a>
+    </div>
+{% endif %}
 {% endblock %}
